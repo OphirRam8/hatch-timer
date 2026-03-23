@@ -28,10 +28,13 @@
 
 html, body {
   height: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
   overflow: hidden;
   font-family: 'Quicksand', sans-serif;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  background: #4a7c59;
 }
 
 body {
@@ -44,7 +47,7 @@ body {
 /* ── Backgrounds ── */
 .app-bg {
   position: fixed;
-  inset: 0;
+  inset: -20px;
   z-index: 0;
   transition: background var(--bg-transition), opacity var(--bg-transition);
 }
@@ -2277,10 +2280,18 @@ function renderBgGrid() {
   });
 }
 
+const bgBodyColors = {
+  forest: '#4a7c59', mint: '#a8e6cf', rainbow: '#ffd1dc', winter: '#1a1a3e',
+  cupcake: '#f8a4b8', foggy: '#8baa8f', sunset: '#2c1654', nightsky: '#0c0c1d',
+  snowpink: '#f0d0dd', farm: '#5ca85f', construction: '#f5a623'
+};
+
 function applyBackground() {
   const bg = backgrounds.find(b => b.id === state.selectedBg);
   const el = document.getElementById('appBg');
   el.className = 'app-bg ' + (bg ? bg.cls : 'bg-forest');
+  document.body.style.background = bgBodyColors[state.selectedBg] || '#4a7c59';
+  document.documentElement.style.background = bgBodyColors[state.selectedBg] || '#4a7c59';
 }
 
 // ── Sound Sheet ──

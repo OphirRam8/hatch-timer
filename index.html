@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Hatch Timer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal: #2ECDA7;
+  --teal-dark: #25a98a;
+  --teal-light: #a8f0da;
+  --charcoal: #3a3a3c;
+  --egg-white: #fefefe;
+  --egg-shadow: #e8e4df;
+  --warm-yellow: #FFD93D;
+  --soft-pink: #FFB5C2;
+  --bg-transition: 0.8s ease;
+  --sheet-radius: 24px;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Quicksand', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Backgrounds ── */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  transition: background var(--bg-transition), opacity var(--bg-transition);
+}
+
+.bg-forest {
+  background: linear-gradient(170deg, #4a7c59 0%, #6db37e 25%, #8fd5a6 45%, #a8e6b0 55%, #6db37e 70%, #4a7c59 100%);
+}
+.bg-forest::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120px 100px at 15% 30%, rgba(107,179,126,0.8) 0%, transparent 70%),
+    radial-gradient(ellipse 80px 90px at 80% 20%, rgba(74,124,89,0.6) 0%, transparent 70%),
+    radial-gradient(ellipse 100px 80px at 50% 60%, rgba(143,213,166,0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 60px 70px at 25% 75%, rgba(74,124,89,0.4) 0%, transparent 70%),
+    radial-gradient(ellipse 90px 60px at 70% 80%, rgba(107,179,126,0.5) 0%, transparent 70%),
+    radial-gradient(circle 8px at 30% 40%, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(circle 6px at 60% 25%, rgba(255,255,255,0.1) 0%, transparent 100%),
+    radial-gradient(circle 10px at 45% 70%, rgba(255,255,255,0.12) 0%, transparent 100%);
+}
+
+.bg-mint {
+  background: linear-gradient(145deg, #c8f5e3 0%, #a8e6cf 30%, #88d8b0 60%, #a8e6cf 100%);
+}
+
+.bg-rainbow {
+  background: linear-gradient(135deg, #ffd1dc 0%, #ffe4b5 20%, #ffffba 40%, #baffc9 60%, #bae1ff 80%, #e8baff 100%);
+}
+.bg-rainbow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 200px 60px at 30% 50%, rgba(255,255,255,0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 180px 50px at 70% 40%, rgba(255,255,255,0.25) 0%, transparent 70%);
+}
+
+.bg-winter {
+  background: linear-gradient(180deg, #1a1a3e 0%, #2d2d6b 40%, #4a4a8a 70%, #6a6aaa 100%);
+}
+.bg-winter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 2px at 10% 15%, white 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 25% 30%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(circle 2px at 40% 10%, white 0%, transparent 100%),
+    radial-gradient(circle 1px at 55% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(circle 2.5px at 70% 15%, white 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 85% 35%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(circle 1px at 15% 60%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(circle 2px at 50% 50%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 75% 55%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(circle 1px at 90% 70%, rgba(255,255,255,0.5) 0%, transparent 100%);
+  animation: snowDrift 8s ease-in-out infinite;
+}
+
+.bg-cupcake {
+  background: linear-gradient(135deg, #f8a4b8 0%, #f4c2c2 30%, #fdd9b5 60%, #f8a4b8 100%);
+}
+.bg-cupcake::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  background:
+    radial-gradient(circle 20px at 15% 20%, var(--warm-yellow) 0%, transparent 100%),
+    radial-gradient(circle 15px at 35% 45%, #ff9a9e 0%, transparent 100%),
+    radial-gradient(circle 18px at 60% 15%, var(--soft-pink) 0%, transparent 100%),
+    radial-gradient(circle 12px at 80% 40%, var(--warm-yellow) 0%, transparent 100%),
+    radial-gradient(circle 22px at 25% 70%, #ff9a9e 0%, transparent 100%),
+    radial-gradient(circle 16px at 70% 65%, var(--soft-pink) 0%, transparent 100%),
+    radial-gradient(circle 14px at 45% 85%, var(--warm-yellow) 0%, transparent 100%),
+    radial-gradient(circle 20px at 90% 75%, #ff9a9e 0%, transparent 100%);
+}
+
+.bg-foggy {
+  background: linear-gradient(180deg, #8baa8f 0%, #a3bfa6 30%, #c4d7c6 60%, #dde8de 100%);
+}
+.bg-foggy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 300px 100px at 30% 40%, rgba(255,255,255,0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 250px 80px at 70% 60%, rgba(255,255,255,0.25) 0%, transparent 70%);
+}
+
+.bg-sunset {
+  background: linear-gradient(180deg, #2c1654 0%, #6b2fa0 20%, #d4447c 45%, #f4845f 65%, #f7dc6f 85%, #ffeaa7 100%);
+}
+
+.bg-nightsky {
+  background: linear-gradient(180deg, #0c0c1d 0%, #1a1a3e 40%, #2d2d5e 70%, #1a1a3e 100%);
+}
+.bg-nightsky::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 1.5px at 8% 12%, #ffd700 0%, transparent 100%),
+    radial-gradient(circle 1px at 20% 8%, white 0%, transparent 100%),
+    radial-gradient(circle 2px at 35% 18%, #ffd700 0%, transparent 100%),
+    radial-gradient(circle 1px at 48% 5%, white 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 62% 15%, white 0%, transparent 100%),
+    radial-gradient(circle 1px at 78% 10%, #ffd700 0%, transparent 100%),
+    radial-gradient(circle 2px at 88% 22%, white 0%, transparent 100%),
+    radial-gradient(circle 1px at 15% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 55% 30%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(circle 1px at 82% 38%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(circle 30px at 75% 12%, rgba(255,215,0,0.08) 0%, transparent 100%);
+}
+
+.bg-snowpink {
+  background: linear-gradient(160deg, #f8e8ee 0%, #f0d0dd 30%, #e8b8cc 60%, #f0d0dd 100%);
+}
+.bg-snowpink::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 2px at 12% 20%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 30% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(circle 2px at 55% 25%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(circle 1px at 75% 18%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(circle 1.5px at 90% 30%, rgba(255,255,255,0.8) 0%, transparent 100%);
+}
+
+.bg-farm {
+  background: linear-gradient(180deg, #87ceeb 0%, #98d8c8 30%, #7bc67e 50%, #5ca85f 65%, #8B7355 80%, #a08060 100%);
+}
+
+.bg-construction {
+  background: linear-gradient(180deg, #f5a623 0%, #e8963f 30%, #d4845a 50%, #c07050 70%, #8b6040 100%);
+}
+
+@keyframes snowDrift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* ── App Layout ── */
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px);
+}
+
+/* ── Settings Button ── */
+.settings-btn {
+  position: absolute;
+  top: max(env(safe-area-inset-top, 12px), 12px);
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.3s, background 0.3s;
+}
+.settings-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
+
+/* ── Egg Container ── */
+.egg-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  position: relative;
+}
+
+.egg-wrapper {
+  position: relative;
+  width: 260px;
+  height: 320px;
+  margin-bottom: 20px;
+}
+
+.egg {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15));
+  transition: transform 0.3s;
+}
+
+.egg svg {
+  width: 100%;
+  height: 100%;
+}
+
+.egg-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 25px 20px;
+  z-index: 2;
+}
+
+.egg-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--teal);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.timer-display {
+  font-family: 'Baloo 2', cursive;
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--charcoal);
+  line-height: 1;
+  letter-spacing: 2px;
+}
+
+/* ── Scroll Pickers ── */
+.picker-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.picker-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.picker-label {
+  font-family: 'Baloo 2', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin-bottom: 2px;
+}
+
+.picker-scroll {
+  position: relative;
+  height: 160px;
+  width: 80px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 20%, black 40%, black 60%, rgba(0,0,0,0.2) 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 20%, black 40%, black 60%, rgba(0,0,0,0.2) 80%, transparent 100%);
+  touch-action: none;
+  cursor: grab;
+}
+.picker-scroll:active { cursor: grabbing; }
+
+.picker-scroll-inner {
+  position: absolute;
+  width: 100%;
+  will-change: transform;
+}
+
+.picker-highlight {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 42px;
+  transform: translateY(-50%);
+  border-top: 2px solid #e74c3c;
+  border-bottom: 2px solid #e74c3c;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.picker-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Baloo 2', cursive;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--charcoal);
+  opacity: 0.25;
+  transition: opacity 0.15s, transform 0.15s;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.picker-item.near1 {
+  opacity: 0.45;
+  transform: scale(0.92);
+}
+
+.picker-item.selected {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+
+.picker-separator {
+  font-family: 'Baloo 2', cursive;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--charcoal);
+  margin-top: 18px;
+}
+
+/* ── Reminder Badge ── */
+.reminder-badge {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  z-index: 5;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.reminder-badge:active { transform: scale(0.9); }
+.reminder-badge.hidden { display: none; }
+
+/* ── Start Button ── */
+.start-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px;
+  border: 3px solid white;
+  border-radius: 20px;
+  background: var(--teal);
+  color: white;
+  font-family: 'Baloo 2', cursive;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(46,205,167,0.4);
+  transition: transform 0.15s, box-shadow 0.15s;
+  margin-bottom: 16px;
+}
+.start-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 3px 10px rgba(46,205,167,0.3);
+}
+
+/* ── Timer Controls ── */
+.timer-controls {
+  display: none;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: 16px;
+}
+.timer-controls.visible {
+  display: flex;
+}
+
+.ctrl-btn {
+  flex: 1;
+  padding: 14px;
+  border: 3px solid white;
+  border-radius: 20px;
+  font-family: 'Baloo 2', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.ctrl-btn:active { transform: scale(0.95); }
+
+.ctrl-pause {
+  background: var(--warm-yellow);
+  color: var(--charcoal);
+  box-shadow: 0 4px 14px rgba(255,217,61,0.4);
+}
+.ctrl-stop {
+  background: #ff6b6b;
+  color: white;
+  box-shadow: 0 4px 14px rgba(255,107,107,0.4);
+}
+
+/* ── Bottom Toolbar ── */
+.toolbar {
+  display: flex;
+  gap: 28px;
+  padding: 0 0 24px;
+}
+
+.tool-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+.tool-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.5); }
+
+/* ── Bottom Sheet ── */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: auto; }
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85vh;
+  background: white;
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sheet.open { transform: translateY(0); }
+
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: #d1d1d6;
+  border-radius: 2px;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px 8px;
+  flex-shrink: 0;
+}
+
+.sheet-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f2f2f7;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8e8e93;
+  transition: background 0.2s;
+}
+.sheet-close:active { background: #e5e5ea; }
+
+.sheet-title {
+  flex: 1;
+  text-align: center;
+  font-family: 'Baloo 2', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-right: 36px;
+}
+
+.sheet-subtitle {
+  padding: 0 20px 12px;
+  font-size: 14px;
+  color: #8e8e93;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px 30px;
+  overscroll-behavior: contain;
+}
+
+/* ── Grid Items ── */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.grid-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid #e5e5ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  background: white;
+  position: relative;
+  transition: border-color 0.25s, transform 0.2s;
+}
+.grid-circle:active { transform: scale(0.93); }
+
+.grid-item.selected .grid-circle {
+  border-color: var(--teal);
+  border-width: 4px;
+}
+
+.grid-item.selected .grid-circle::after {
+  content: '✓';
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--charcoal);
+  text-align: center;
+}
+
+/* Background preview circles */
+.bg-preview {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid #e5e5ea;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.2s;
+}
+.bg-preview:active { transform: scale(0.93); }
+
+.grid-item.selected .bg-preview {
+  border-color: var(--teal);
+}
+.grid-item.selected .bg-preview::after {
+  content: '✓';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.bg-preview-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+/* ── Sound List ── */
+.sound-section-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin: 16px 0 8px;
+}
+
+.sound-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sound-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f8f8fa;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sound-row:active { transform: scale(0.98); background: #f0f0f5; }
+
+.sound-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 2.5px solid #d1d1d6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.sound-row.selected .sound-check {
+  border-color: var(--teal);
+  background: var(--teal);
+}
+.sound-row.selected .sound-check::after {
+  content: '✓';
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sound-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.sound-preview-icon {
+  margin-left: auto;
+  font-size: 18px;
+  opacity: 0.4;
+}
+
+/* ── Sub-sheet nav ── */
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #f8f8fa;
+  border-radius: 16px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.2s;
+}
+.nav-row:active { background: #f0f0f5; }
+
+.nav-row-label {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+.nav-row-arrow {
+  font-size: 18px;
+  color: #c7c7cc;
+}
+
+/* ── Running Timer View ── */
+.running-view {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.running-view.visible { display: flex; }
+
+.scene-circle {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.scene-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+/* Egg inside the scene circle during countdown */
+.scene-egg {
+  position: absolute;
+  width: 160px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.scene-egg svg { width: 100%; height: 100%; }
+
+/* Crack lines on the egg - appear progressively */
+.crack-lines {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.crack-line {
+  stroke: var(--charcoal);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.crack-line.visible { opacity: 1; }
+
+/* Progress pie overlapping egg at bottom-right */
+.progress-pie {
+  position: absolute;
+  right: -15px;
+  bottom: -15px;
+  width: 80px;
+  height: 80px;
+  z-index: 4;
+}
+
+.progress-pie svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-track {
+  fill: white;
+  stroke: var(--charcoal);
+  stroke-width: 3;
+}
+
+.progress-fill {
+  fill: none;
+  stroke: #ff6b6b;
+  stroke-width: 24;
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* Big countdown below circle */
+.running-countdown {
+  font-family: 'Baloo 2', cursive;
+  font-size: 72px;
+  font-weight: 800;
+  color: var(--charcoal);
+  line-height: 1;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+/* Stop button */
+.stop-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--teal);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(46,205,167,0.4), 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.15s;
+}
+.stop-btn:active { transform: scale(0.9); }
+.stop-btn-inner {
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 5px;
+}
+
+/* Top-right icons during timer */
+.running-icons {
+  position: absolute;
+  top: max(env(safe-area-inset-top, 12px), 12px);
+  right: 16px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+.running-icon {
+  font-size: 28px;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.2s;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.running-icon.visible { opacity: 1; }
+.running-icon:active { transform: scale(1.3); }
+.running-icon.muted { opacity: 0.35 !important; }
+.running-icon-music { color: var(--teal); }
+.running-icon-bell { color: var(--warm-yellow); }
+
+@keyframes headShake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Wobble Animation ── */
+@keyframes wobble {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  15% { transform: translate(-50%, -50%) rotate(2.5deg); }
+  30% { transform: translate(-50%, -50%) rotate(-2deg); }
+  45% { transform: translate(-50%, -50%) rotate(1.5deg); }
+  60% { transform: translate(-50%, -50%) rotate(-1deg); }
+  75% { transform: translate(-50%, -50%) rotate(0.5deg); }
+}
+.scene-egg.wobbling {
+  animation: wobble 1.2s ease-in-out infinite;
+}
+
+/* ── Hatch Complete View ── */
+.complete-view {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.complete-view.visible { display: flex; }
+
+/* Scene circle in complete state shows shell pieces */
+.shell-pieces {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.shell-piece {
+  position: absolute;
+  width: 28px;
+  height: 22px;
+  background: #fefefe;
+  border: 3px solid var(--charcoal);
+  border-radius: 4px 8px 6px 10px;
+}
+
+.shell-piece:nth-child(1) { left: 8%; bottom: 25%; transform: rotate(-35deg); }
+.shell-piece:nth-child(2) { left: 3%; bottom: 38%; transform: rotate(15deg); width: 22px; height: 18px; }
+.shell-piece:nth-child(3) { left: 15%; bottom: 15%; transform: rotate(-60deg); width: 20px; height: 16px; }
+.shell-piece:nth-child(4) { right: 8%; bottom: 25%; transform: rotate(40deg); }
+.shell-piece:nth-child(5) { right: 3%; bottom: 38%; transform: rotate(-20deg); width: 22px; height: 18px; }
+.shell-piece:nth-child(6) { right: 15%; bottom: 15%; transform: rotate(55deg); width: 20px; height: 16px; }
+.shell-piece:nth-child(7) { left: 22%; bottom: 8%; transform: rotate(10deg); width: 24px; height: 18px; }
+.shell-piece:nth-child(8) { right: 22%; bottom: 8%; transform: rotate(-15deg); width: 24px; height: 18px; }
+
+.complete-animal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 90px;
+  z-index: 3;
+  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+@keyframes bounceIn {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.complete-reminder-badge {
+  position: absolute;
+  left: -5px;
+  top: 15%;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--charcoal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  z-index: 5;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  opacity: 0;
+  animation: fadeUp 0.4s ease both;
+  animation-delay: 0.6s;
+}
+.complete-reminder-badge.hidden { display: none; }
+
+.complete-countdown {
+  font-family: 'Baloo 2', cursive;
+  font-size: 72px;
+  font-weight: 800;
+  color: var(--charcoal);
+  line-height: 1;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+.done-btn {
+  width: 100%;
+  max-width: 300px;
+  padding: 18px;
+  border: none;
+  border-radius: 20px;
+  background: #ff6b6b;
+  color: white;
+  font-family: 'Baloo 2', cursive;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255,107,107,0.3), 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.15s;
+  opacity: 0;
+  animation: fadeUp 0.5s ease both;
+  animation-delay: 0.8s;
+}
+.done-btn:active { transform: scale(0.96); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Confetti / Celebration ── */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+
+/* ── Sound sheet sub-views ── */
+.sound-subview {
+  display: none;
+}
+.sound-subview.active {
+  display: block;
+}
+.sound-main.hidden {
+  display: none;
+}
+
+.sound-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f2f2f7;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8e8e93;
+}
+
+/* ── Toggle Switch ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: #f8f8fa;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.toggle-label {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  background: #e0e0e0;
+  cursor: pointer;
+  transition: background 0.3s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.toggle-switch.on {
+  background: #34c759;
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.3s;
+}
+.toggle-switch.on::after {
+  transform: translateX(20px);
+}
+
+/* ── Running timer extra controls ── */
+.running-extra-controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.pause-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--warm-yellow);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(255,217,61,0.4), 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.15s;
+  font-size: 28px;
+}
+.pause-btn:active { transform: scale(0.9); }
+
+.time-adjust-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid #d1d1d6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: 'Baloo 2', cursive;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--charcoal);
+  transition: transform 0.15s;
+}
+.time-adjust-btn:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<div class="app-bg bg-forest" id="appBg"></div>
+
+<div class="app" id="app">
+  <button class="settings-btn" id="settingsBtn" onclick="openSheet('settings')">⚙️</button>
+  <div class="running-icons" id="runningIcons">
+    <span class="running-icon running-icon-music" id="iconMusic" onclick="toggleDuringSound()">🎵</span>
+    <span class="running-icon running-icon-bell" id="iconBell" onclick="toggleEndSound()">🔔</span>
+  </div>
+
+  <div class="egg-area">
+    <div class="egg-wrapper">
+      <div class="egg" id="egg">
+        <!-- Full egg SVG -->
+        <svg viewBox="0 0 260 320" fill="none">
+          <path d="M130 12 C60 12, 16 130, 16 200 C16 268, 66 308, 130 308 C194 308, 244 268, 244 200 C244 130, 200 12, 130 12Z"
+            fill="url(#eggGrad)" stroke="#3a3a3c" stroke-width="6" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="eggGrad" x1="80" y1="30" x2="200" y2="300" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="40%" stop-color="#fefefe"/>
+              <stop offset="100%" stop-color="#f0ece6"/>
+            </linearGradient>
+          </defs>
+          <!-- Subtle shine -->
+          <ellipse cx="105" cy="100" rx="35" ry="55" fill="rgba(255,255,255,0.5)" transform="rotate(-15 105 100)"/>
+        </svg>
+
+        <!-- Timer content inside egg -->
+        <div class="egg-content" id="eggContent">
+          <div id="setTimerView" style="display:flex;flex-direction:column;align-items:center;width:100%;">
+            <div class="egg-title">Set Timer</div>
+            <div class="picker-area">
+              <div class="picker-col">
+                <div class="picker-label">Min</div>
+                <div class="picker-scroll" id="minPicker">
+                  <div class="picker-scroll-inner" id="minInner"></div>
+                  <div class="picker-highlight"></div>
+                </div>
+              </div>
+              <div class="picker-separator">:</div>
+              <div class="picker-col">
+                <div class="picker-label">Sec</div>
+                <div class="picker-scroll" id="secPicker">
+                  <div class="picker-scroll-inner" id="secInner"></div>
+                  <div class="picker-highlight"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reminder badge -->
+        <div class="reminder-badge" id="reminderBadge" onclick="openSheet('reminder')">👍</div>
+      </div>
+
+      <!-- ── Running Timer View ── -->
+      <div class="running-view" id="runningView">
+        <div class="scene-circle" id="sceneCircle">
+          <div class="scene-bg" id="sceneBg"></div>
+          <div class="scene-egg" id="sceneEgg">
+            <svg viewBox="0 0 160 200" fill="none">
+              <path d="M80 8 C37 8, 10 80, 10 125 C10 167, 40 192, 80 192 C120 192, 150 167, 150 125 C150 80, 123 8, 80 8Z"
+                fill="url(#eggGrad2)" stroke="#3a3a3c" stroke-width="5" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="eggGrad2" x1="50" y1="20" x2="120" y2="185" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="40%" stop-color="#fefefe"/>
+                  <stop offset="100%" stop-color="#f0ece6"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="65" cy="65" rx="22" ry="35" fill="rgba(255,255,255,0.45)" transform="rotate(-15 65 65)"/>
+            </svg>
+            <!-- Crack lines overlay -->
+            <svg class="crack-lines" viewBox="0 0 160 200" fill="none">
+              <path class="crack-line" id="crack1" d="M60 55 L70 70 L58 82 L68 95"/>
+              <path class="crack-line" id="crack2" d="M72 45 L80 60 L72 72"/>
+              <path class="crack-line" id="crack3" d="M50 75 L60 90 L52 100 L58 110"/>
+              <path class="crack-line" id="crack4" d="M85 50 L78 65 L88 78"/>
+              <path class="crack-line" id="crack5" d="M90 70 L82 85 L90 95"/>
+            </svg>
+            <!-- Progress pie -->
+            <div class="progress-pie" id="progressPie">
+              <svg viewBox="0 0 80 80">
+                <circle class="progress-track" cx="40" cy="40" r="36"/>
+                <circle class="progress-fill" id="progressFill" cx="40" cy="40" r="12"
+                  stroke-dasharray="75.4" stroke-dashoffset="0"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="running-countdown" id="runningCountdown">00:30</div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <button class="time-adjust-btn" id="btnSubTime" onclick="adjustTime(-30)" style="display:none;">-30</button>
+          <button class="pause-btn" id="btnPause" onclick="pauseTimer()" style="display:none;">⏸️</button>
+          <button class="stop-btn" id="btnStop" onclick="handleStop()">
+            <div class="stop-btn-inner"></div>
+          </button>
+          <button class="time-adjust-btn" id="btnAddTime" onclick="adjustTime(30)" style="display:none;">+30</button>
+        </div>
+      </div>
+
+      <!-- ── Complete View ── -->
+      <div class="complete-view" id="completeView">
+        <div class="scene-circle">
+          <div class="scene-bg" id="completeBg"></div>
+          <div class="shell-pieces">
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+            <div class="shell-piece"></div>
+          </div>
+          <div class="complete-animal" id="completeAnimal">🐶</div>
+          <div class="complete-reminder-badge" id="completeReminderBadge">👍</div>
+        </div>
+        <div class="complete-countdown">00:00</div>
+        <button class="done-btn" onclick="dismissHatch()">Done</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="startTimer()">Start</button>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool-btn" onclick="openSheet('hatch')" title="Hatch Surprise">🥚</button>
+    <button class="tool-btn" onclick="openSheet('sound')" title="Sound">🎵</button>
+    <button class="tool-btn" onclick="openSheet('background')" title="Background">🏞️</button>
+  </div>
+</div>
+
+<!-- ── Overlays ── -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeAllSheets()"></div>
+
+<!-- Hatch Surprise Sheet -->
+<div class="sheet" id="hatchSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeAllSheets()">✕</button>
+    <div class="sheet-title">Hatch Surprise</div>
+  </div>
+  <div class="sheet-subtitle">Selected animals will be hatched randomly</div>
+  <div class="sheet-body">
+    <div class="grid-3" id="animalGrid"></div>
+  </div>
+</div>
+
+<!-- Reminder Sheet -->
+<div class="sheet" id="reminderSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeAllSheets()">✕</button>
+    <div class="sheet-title">Affirmation</div>
+  </div>
+  <div class="sheet-subtitle">Pick a positive message to hear when the timer ends!</div>
+  <div class="sheet-body">
+    <div class="grid-3" id="reminderGrid"></div>
+  </div>
+</div>
+
+<!-- Background Sheet -->
+<div class="sheet" id="backgroundSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeAllSheets()">✕</button>
+    <div class="sheet-title">Background</div>
+  </div>
+  <div class="sheet-subtitle">Select a background image to use.</div>
+  <div class="sheet-body">
+    <div class="grid-3" id="bgGrid"></div>
+  </div>
+</div>
+
+<!-- Sound Sheet -->
+<div class="sheet" id="soundSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeAllSheets()" id="soundCloseBtn">✕</button>
+    <div class="sheet-title" id="soundTitle">Sound</div>
+  </div>
+  <div class="sheet-body">
+    <!-- Main nav -->
+    <div class="sound-main" id="soundMain">
+      <div class="nav-row" onclick="showSoundSub('during')">
+        <span class="nav-row-label">During Timer</span>
+        <span class="nav-row-arrow">›</span>
+      </div>
+      <div class="nav-row" onclick="showSoundSub('end')">
+        <span class="nav-row-label">End of Timer</span>
+        <span class="nav-row-arrow">›</span>
+      </div>
+    </div>
+    <!-- During Timer sub-view -->
+    <div class="sound-subview" id="duringSub">
+      <div class="sheet-subtitle" style="padding:0 0 12px;">Select the sound to play during timer. Tap to hear a sample!</div>
+      <div class="sound-list" id="duringList"></div>
+    </div>
+    <!-- End of Timer sub-view -->
+    <div class="sound-subview" id="endSub">
+      <div class="sheet-subtitle" style="padding:0 0 12px;">Select the sound to play when the timer ends. Tap to hear a sample!</div>
+      <div class="sound-list" id="endList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Sheet -->
+<div class="sheet" id="settingsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="sheet-close" onclick="closeAllSheets()">✕</button>
+    <div class="sheet-title">Options</div>
+  </div>
+  <div class="sheet-subtitle">Customize the buttons on your timer.</div>
+  <div class="sheet-body">
+    <div class="toggle-row">
+      <span class="toggle-label">Long Press to Stop</span>
+      <div class="toggle-switch" id="toggleLongPress" onclick="toggleSetting('longPressStop')"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Pause Button</span>
+      <div class="toggle-switch" id="togglePause" onclick="toggleSetting('pauseButton')"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Add / Subtract Time</span>
+      <div class="toggle-switch" id="toggleAddTime" onclick="toggleSetting('addSubtractTime')"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Confetti container -->
+<div class="confetti-container" id="confetti"></div>
+
+<script>
+// ── State ──
+const defaults = {
+  selectedAnimals: ['🐶','🐱','🐻','🐧','🐥','🦄'],
+  selectedReminder: '⭐',
+  selectedBg: 'forest',
+  duringSound: 'ticktock',
+  endSound: 'party',
+  minutes: 0,
+  seconds: 30,
+  longPressStop: true,
+  pauseButton: false,
+  addSubtractTime: false
+};
+
+
+let state = { ...defaults };
+
+// Load from localStorage
+try {
+  const saved = JSON.parse(localStorage.getItem('hatchTimer'));
+  if (saved) Object.assign(state, saved);
+} catch(e) {}
+
+function saveState() {
+  localStorage.setItem('hatchTimer', JSON.stringify(state));
+}
+
+// ── Data ──
+const animals = [
+  { emoji: '🐶', name: 'Dog' },
+  { emoji: '🐱', name: 'Cat' },
+  { emoji: '🐻', name: 'Bear' },
+  { emoji: '🐝', name: 'Bee' },
+  { emoji: '🦋', name: 'Butterfly' },
+  { emoji: '🐬', name: 'Dolphin' },
+  { emoji: '🐘', name: 'Elephant' },
+  { emoji: '🐧', name: 'Penguin' },
+  { emoji: '🐷', name: 'Pig' },
+  { emoji: '🐯', name: 'Tiger' },
+  { emoji: '🐥', name: 'Chick' },
+  { emoji: '🦄', name: 'Unicorn' },
+  { emoji: '🕊️', name: 'Dove' },
+  { emoji: '🐟', name: 'Fish' },
+  { emoji: '🐸', name: 'Frog' },
+  { emoji: '🦁', name: 'Lion' },
+  { emoji: '🐰', name: 'Bunny' },
+  { emoji: '🐼', name: 'Panda' },
+];
+
+const reminders = [
+  { emoji: '⛔', name: 'Off', label: '' },
+  // Affirmations
+  { emoji: '⭐', name: 'Amazing', label: 'You are amazing!' },
+  { emoji: '💪', name: 'Strong', label: 'You are so strong!' },
+  { emoji: '🌟', name: 'Shine', label: 'You were born to shine!' },
+  { emoji: '❤️', name: 'Loved', label: 'You are so loved!' },
+  { emoji: '🦸', name: 'Super', label: 'You are a superhero!' },
+  { emoji: '🚀', name: 'Unstoppable', label: 'You can do anything!' },
+  // Action - Eating
+  { emoji: '🍽️', name: 'Yummy Time', label: 'Time to fuel up your superpower body!' },
+  { emoji: '🥤', name: 'Snack Hero', label: 'Snack time! Heroes need energy!' },
+  // Action - Bath & Hygiene
+  { emoji: '🛁', name: 'Splash Time', label: 'Splash time! Let\'s make some bubbles!' },
+  { emoji: '🪥', name: 'Sparkle Teeth', label: 'Let\'s make those teeth sparkle!' },
+  // Action - Sleep
+  { emoji: '🌙', name: 'Dream Time', label: 'Time for awesome dreams! Goodnight superstar!' },
+  { emoji: '😴', name: 'Cozy Up', label: 'Cozy up! Tomorrow is a brand new adventure!' },
+  // Action - Getting Ready
+  { emoji: '👗', name: 'Dress Up', label: 'Time to dress up like a champion!' },
+  { emoji: '🎒', name: 'Adventure', label: 'Pack up! A new adventure is waiting!' },
+  // Action - Learning & Tidy
+  { emoji: '📚', name: 'Brain Power', label: 'Brain power time! You are so smart!' },
+  { emoji: '✨', name: 'Tidy Up', label: 'Let\'s make everything sparkle and shine!' },
+];
+
+const backgrounds = [
+  { id: 'forest', name: 'Forest', cls: 'bg-forest' },
+  { id: 'mint', name: 'Mint', cls: 'bg-mint' },
+  { id: 'rainbow', name: 'Rainbow', cls: 'bg-rainbow' },
+  { id: 'winter', name: 'Winter', cls: 'bg-winter' },
+  { id: 'cupcake', name: 'Cupcake', cls: 'bg-cupcake' },
+  { id: 'foggy', name: 'Foggy', cls: 'bg-foggy' },
+  { id: 'sunset', name: 'Sunset', cls: 'bg-sunset' },
+  { id: 'nightsky', name: 'Night Sky', cls: 'bg-nightsky' },
+  { id: 'snowpink', name: 'Snow Pink', cls: 'bg-snowpink' },
+  { id: 'farm', name: 'Farmland', cls: 'bg-farm' },
+  { id: 'construction', name: 'Construction', cls: 'bg-construction' },
+];
+
+const duringSounds = [
+  { id: 'ticktock', name: 'Tick Tock' },
+  { id: 'river', name: 'River' },
+  { id: 'hickory', name: 'Hickory Dickory' },
+  { id: 'twinkle', name: 'Twinkle Twinkle' },
+  { id: 'robot', name: 'Happy Robot' },
+  { id: 'silence', name: 'Silent' },
+];
+
+const endSounds = [
+  { id: 'party', name: 'Animal Party' },
+  { id: 'alarm', name: 'Alarm' },
+  { id: 'ukulele', name: 'Ukulele' },
+  { id: 'celebration', name: 'Celebration' },
+  { id: 'retro', name: 'Retro Song' },
+  { id: 'timesup', name: 'Times Up' },
+];
+
+// ── Audio Engine ──
+let audioCtx;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+let duringInterval = null;
+let duringSoundTimeout = null;
+
+function playNote(freq, duration, type = 'sine', volume = 0.12, delay = 0) {
+  const ctx = getAudio();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(volume, ctx.currentTime + delay);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime + delay);
+  osc.stop(ctx.currentTime + delay + duration);
+}
+
+function playTickTock() {
+  playNote(800, 0.05, 'square', 0.06);
+  setTimeout(() => playNote(600, 0.05, 'square', 0.04), 500);
+}
+
+function playRiver() {
+  const ctx = getAudio();
+  for (let i = 0; i < 5; i++) {
+    const freq = 200 + Math.random() * 400;
+    playNote(freq, 0.3, 'sine', 0.03, i * 0.15);
+  }
+}
+
+function playHickory() {
+  const notes = [523, 587, 659, 523, 523, 587, 659, 523];
+  notes.forEach((n, i) => playNote(n, 0.25, 'triangle', 0.1, i * 0.3));
+}
+
+function playTwinkle() {
+  const notes = [523, 523, 784, 784, 880, 880, 784];
+  notes.forEach((n, i) => playNote(n, 0.3, 'sine', 0.1, i * 0.35));
+}
+
+function playRobot() {
+  for (let i = 0; i < 6; i++) {
+    playNote(200 + i * 100, 0.15, 'sawtooth', 0.06, i * 0.2);
+  }
+}
+
+function playParty() {
+  const notes = [523, 659, 784, 1047, 784, 659, 784, 1047, 1175, 1047];
+  notes.forEach((n, i) => playNote(n, 0.2, 'triangle', 0.12, i * 0.15));
+}
+
+function playAlarm() {
+  for (let i = 0; i < 6; i++) {
+    playNote(880, 0.15, 'square', 0.1, i * 0.3);
+    playNote(660, 0.15, 'square', 0.1, i * 0.3 + 0.15);
+  }
+}
+
+function playUkulele() {
+  const notes = [392, 494, 587, 659, 587, 494, 392, 494, 587, 784];
+  notes.forEach((n, i) => playNote(n, 0.25, 'triangle', 0.1, i * 0.2));
+}
+
+function playCelebration() {
+  const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+  notes.forEach((n, i) => playNote(n, 0.15, 'sine', 0.1, i * 0.12));
+  setTimeout(() => {
+    [1047, 988, 880, 784].forEach((n, i) => playNote(n, 0.2, 'triangle', 0.08, i * 0.15));
+  }, 1200);
+}
+
+function playRetro() {
+  const notes = [262, 330, 392, 523, 392, 330, 262, 330, 392, 523, 659, 523];
+  notes.forEach((n, i) => playNote(n, 0.12, 'square', 0.07, i * 0.15));
+}
+
+function playTimesUp() {
+  for (let i = 0; i < 3; i++) {
+    playNote(784, 0.3, 'triangle', 0.12, i * 0.5);
+    playNote(1047, 0.3, 'triangle', 0.12, i * 0.5 + 0.25);
+  }
+}
+
+const duringPlayers = { ticktock: playTickTock, river: playRiver, hickory: playHickory, twinkle: playTwinkle, robot: playRobot };
+const endPlayers = { party: playParty, alarm: playAlarm, ukulele: playUkulele, celebration: playCelebration, retro: playRetro, timesup: playTimesUp };
+
+function previewDuringSound(id) {
+  if (duringPlayers[id]) duringPlayers[id]();
+}
+function previewEndSound(id) {
+  if (endPlayers[id]) endPlayers[id]();
+}
+
+function startDuringSound() {
+  stopDuringSound();
+  if (duringMuted) return;
+  const player = duringPlayers[state.duringSound];
+  if (!player || state.duringSound === 'silence') return;
+  player();
+  const intervals = { ticktock: 1000, river: 2000, hickory: 3000, twinkle: 3500, robot: 2000 };
+  duringInterval = setInterval(player, intervals[state.duringSound] || 2000);
+}
+
+function stopDuringSound() {
+  if (duringInterval) { clearInterval(duringInterval); duringInterval = null; }
+}
+
+let duringMuted = false;
+let endMuted = false;
+
+function playEndSound() {
+  if (endMuted) return;
+  const player = endPlayers[state.endSound];
+  if (player) player();
+}
+
+function toggleDuringSound() {
+  duringMuted = !duringMuted;
+  const icon = document.getElementById('iconMusic');
+  icon.classList.toggle('muted', duringMuted);
+  if (duringMuted) {
+    stopDuringSound();
+  } else if (timerInterval && !isPaused) {
+    startDuringSound();
+  }
+}
+
+function toggleEndSound() {
+  endMuted = !endMuted;
+  const icon = document.getElementById('iconBell');
+  icon.classList.toggle('muted', endMuted);
+}
+
+// ── Scroll Picker ──
+function buildPicker(container, inner, count, value, onChange) {
+  // Circular picker: values 0..count-1 that wrap around (0 -> count-1 -> 0)
+  // We render many copies so the user can scroll freely in both directions
+  inner.innerHTML = '';
+  const itemH = 40;
+  const copies = 7; // repeat the number set this many times for infinite scroll feel
+  const totalItems = count * copies;
+  const middleCopy = Math.floor(copies / 2); // start in the middle copy
+
+  for (let c = 0; c < copies; c++) {
+    for (let i = 0; i < count; i++) {
+      const div = document.createElement('div');
+      div.className = 'picker-item';
+      div.textContent = i;
+      div.dataset.value = i;
+      div.dataset.index = c * count + i;
+      inner.appendChild(div);
+    }
+  }
+
+  let currentVal = value;
+  let scrollY = 0;
+  let velocity = 0;
+  let isDragging = false;
+  let lastTouchY = 0;
+  let lastTouchTime = 0;
+  let animFrame = null;
+
+  const totalHeight = totalItems * itemH;
+  const centerCopyOffset = middleCopy * count * itemH;
+
+  // Wrap scrollY to stay in the middle region so it never runs out
+  function wrapScroll() {
+    const oneSet = count * itemH;
+    const minBound = oneSet;
+    const maxBound = (copies - 2) * oneSet;
+    if (scrollY < minBound) scrollY += oneSet;
+    else if (scrollY > maxBound) scrollY -= oneSet;
+  }
+
+  function getValueFromScroll() {
+    let idx = Math.round(scrollY / itemH);
+    return ((idx % count) + count) % count;
+  }
+
+  function render(animate) {
+    const centerOffset = (container.offsetHeight / 2) - (itemH / 2);
+    const ty = -scrollY + centerOffset;
+    if (animate) {
+      inner.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+    } else {
+      inner.style.transition = 'none';
+    }
+    inner.style.transform = `translateY(${ty}px)`;
+
+    const centerIdx = Math.round(scrollY / itemH);
+    inner.querySelectorAll('.picker-item').forEach(el => {
+      const idx = parseInt(el.dataset.index);
+      const dist = Math.abs(idx - centerIdx);
+      el.classList.remove('selected', 'near1');
+      if (dist === 0) el.classList.add('selected');
+      else if (dist === 1) el.classList.add('near1');
+    });
+  }
+
+  function snapTo(val, animate = true) {
+    currentVal = ((val % count) + count) % count;
+    // Find nearest scroll position for this value from current position
+    const currentIdx = Math.round(scrollY / itemH);
+    const currentMod = ((currentIdx % count) + count) % count;
+    let diff = currentVal - currentMod;
+    if (diff > count / 2) diff -= count;
+    if (diff < -count / 2) diff += count;
+    scrollY = (currentIdx + diff) * itemH;
+    wrapScroll();
+    render(animate);
+    onChange(currentVal);
+  }
+
+  function startMomentum() {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 8); // cap flick speed
+    const friction = 0.88;
+    const step = () => {
+      if (isDragging) return;
+      velocity *= friction;
+      if (Math.abs(velocity) < 0.3) {
+        const val = getValueFromScroll();
+        snapTo(val, true);
+        return;
+      }
+      scrollY += velocity;
+      wrapScroll();
+      currentVal = getValueFromScroll();
+      render(false);
+      onChange(currentVal);
+      animFrame = requestAnimationFrame(step);
+    };
+    animFrame = requestAnimationFrame(step);
+  }
+
+  // Touch events
+  container.addEventListener('touchstart', e => {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    isDragging = true;
+    velocity = 0;
+    lastTouchY = e.touches[0].clientY;
+    lastTouchTime = Date.now();
+    inner.style.transition = 'none';
+  }, { passive: true });
+
+  container.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touchY = e.touches[0].clientY;
+    const now = Date.now();
+    const dy = (lastTouchY - touchY) * 0.5;
+    const dt = Math.max(1, now - lastTouchTime);
+
+    scrollY += dy;
+    wrapScroll();
+    velocity = dy / dt * 8;
+
+    lastTouchY = touchY;
+    lastTouchTime = now;
+
+    currentVal = getValueFromScroll();
+    render(false);
+    onChange(currentVal);
+  }, { passive: false });
+
+  container.addEventListener('touchend', () => {
+    isDragging = false;
+    startMomentum();
+  });
+
+  // Mouse events for desktop
+  let mouseDown = false;
+  container.addEventListener('mousedown', e => {
+    if (animFrame) cancelAnimationFrame(animFrame);
+    mouseDown = true;
+    isDragging = true;
+    velocity = 0;
+    lastTouchY = e.clientY;
+    lastTouchTime = Date.now();
+    inner.style.transition = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!mouseDown) return;
+    const now = Date.now();
+    const dy = (lastTouchY - e.clientY) * 0.5;
+    const dt = Math.max(1, now - lastTouchTime);
+
+    scrollY += dy;
+    wrapScroll();
+    velocity = dy / dt * 8;
+
+    lastTouchY = e.clientY;
+    lastTouchTime = now;
+
+    currentVal = getValueFromScroll();
+    render(false);
+    onChange(currentVal);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!mouseDown) return;
+    mouseDown = false;
+    isDragging = false;
+    startMomentum();
+  });
+
+  // Mouse wheel
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (animFrame) cancelAnimationFrame(animFrame);
+    const delta = e.deltaY > 0 ? 1 : -1;
+    snapTo(currentVal + delta, true);
+  }, { passive: false });
+
+  // Click to select
+  inner.addEventListener('click', e => {
+    const item = e.target.closest('.picker-item');
+    if (!item) return;
+    const v = parseInt(item.dataset.value);
+    snapTo(v, true);
+  });
+
+  // Initial position — set scrollY to the middle copy + value offset
+  scrollY = centerCopyOffset + value * itemH;
+  currentVal = value;
+  render(false);
+
+  return { setValue: (v) => snapTo(v, true), getValue: () => currentVal };
+}
+
+let minPicker, secPicker;
+
+function initPickers() {
+  minPicker = buildPicker(
+    document.getElementById('minPicker'),
+    document.getElementById('minInner'),
+    60, state.minutes,
+    v => { state.minutes = v; saveState(); }
+  );
+  secPicker = buildPicker(
+    document.getElementById('secPicker'),
+    document.getElementById('secInner'),
+    60, state.seconds,
+    v => { state.seconds = v; saveState(); }
+  );
+}
+
+// ── Timer Logic ──
+let timerInterval = null;
+let remainingSeconds = 0;
+let isPaused = false;
+
+let totalSeconds = 0;
+
+function startTimer() {
+  const total = state.minutes * 60 + state.seconds;
+  if (total <= 0) return;
+
+  totalSeconds = total;
+  remainingSeconds = total;
+  isPaused = false;
+
+  // Hide setup, show running view
+  document.getElementById('egg').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('reminderBadge').style.display = 'none';
+  document.querySelector('.toolbar').style.display = 'none';
+  document.getElementById('settingsBtn').style.display = 'none';
+
+  // Setup scene circle background
+  const bg = backgrounds.find(b => b.id === state.selectedBg);
+  document.getElementById('sceneBg').className = 'scene-bg ' + (bg ? bg.cls : 'bg-forest');
+
+  // Show running view
+  document.getElementById('runningView').classList.add('visible');
+  document.getElementById('sceneEgg').classList.add('wobbling');
+
+  // Show top icons
+  document.getElementById('iconMusic').classList.toggle('visible', state.duringSound !== 'silence');
+  document.getElementById('iconBell').classList.add('visible');
+
+  // Reset cracks
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('crack' + i).classList.remove('visible');
+  }
+
+  updateTimerDisplay();
+  updateProgress();
+  updateRunningControls();
+  startDuringSound();
+
+  // Reset pause state
+  document.getElementById('btnPause').textContent = '⏸️';
+
+  timerInterval = setInterval(() => {
+    if (!isPaused) {
+      remainingSeconds--;
+      updateTimerDisplay();
+      updateProgress();
+      updateCracks();
+      if (remainingSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerComplete();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(remainingSeconds / 60);
+  const s = remainingSeconds % 60;
+  const display = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  document.getElementById('runningCountdown').textContent = display;
+}
+
+function updateProgress() {
+  const elapsed = totalSeconds - remainingSeconds;
+  const fraction = elapsed / totalSeconds;
+  const circumference = 2 * Math.PI * 12; // r=12
+  const offset = circumference * (1 - fraction);
+  document.getElementById('progressFill').style.strokeDashoffset = offset;
+}
+
+function updateCracks() {
+  const fraction = 1 - (remainingSeconds / totalSeconds);
+  // Show cracks progressively
+  if (fraction > 0.15) document.getElementById('crack1').classList.add('visible');
+  if (fraction > 0.35) document.getElementById('crack2').classList.add('visible');
+  if (fraction > 0.55) document.getElementById('crack3').classList.add('visible');
+  if (fraction > 0.75) document.getElementById('crack4').classList.add('visible');
+  if (fraction > 0.9) document.getElementById('crack5').classList.add('visible');
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  stopDuringSound();
+  resetTimerUI();
+}
+
+function resetTimerUI() {
+  // Hide running and complete views
+  document.getElementById('runningView').classList.remove('visible');
+  document.getElementById('completeView').classList.remove('visible');
+
+  // Hide top icons and reset mute states
+  document.getElementById('iconMusic').classList.remove('visible', 'muted');
+  document.getElementById('iconBell').classList.remove('visible', 'muted');
+  duringMuted = false;
+  endMuted = false;
+
+  // Show setup view
+  document.getElementById('egg').style.display = '';
+  document.getElementById('startBtn').style.display = '';
+  document.getElementById('reminderBadge').style.display = '';
+  document.querySelector('.toolbar').style.display = '';
+  document.getElementById('settingsBtn').style.display = '';
+  document.getElementById('confetti').innerHTML = '';
+
+  updateReminderBadge();
+  initPickers();
+}
+
+function timerComplete() {
+  stopDuringSound();
+  playEndSound();
+
+  // Hide running, show complete
+  document.getElementById('runningView').classList.remove('visible');
+  document.getElementById('sceneEgg').classList.remove('wobbling');
+
+  // Setup complete view
+  const bg = backgrounds.find(b => b.id === state.selectedBg);
+  document.getElementById('completeBg').className = 'scene-bg ' + (bg ? bg.cls : 'bg-forest');
+
+  // Pick random animal
+  const pool = state.selectedAnimals.length > 0 ? state.selectedAnimals : ['🐶'];
+  const animal = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById('completeAnimal').textContent = animal;
+
+  // Reminder badge
+  const rem = reminders.find(r => r.emoji === state.selectedReminder);
+  const badge = document.getElementById('completeReminderBadge');
+  if (rem && rem.label) {
+    badge.textContent = rem.emoji;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+
+  document.getElementById('completeView').classList.add('visible');
+  launchConfetti();
+
+  // Speak the affirmation with an upbeat female voice
+  if (rem && rem.label) {
+    setTimeout(() => speakAffirmation(rem.label), 1200);
+  }
+}
+
+function speakAffirmation(text) {
+  if (!('speechSynthesis' in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.05;
+  utter.pitch = 1.3;
+  utter.volume = 1;
+
+  // Try to pick a female English voice
+  const voices = speechSynthesis.getVoices();
+  const preferred = voices.find(v =>
+    v.lang.startsWith('en') && /female|samantha|karen|victoria|fiona|moira|tessa/i.test(v.name)
+  ) || voices.find(v =>
+    v.lang.startsWith('en') && /woman|girl/i.test(v.name)
+  ) || voices.find(v => v.lang.startsWith('en'));
+
+  if (preferred) utter.voice = preferred;
+  speechSynthesis.speak(utter);
+}
+
+function dismissHatch() {
+  resetTimerUI();
+}
+
+// ── Confetti ──
+function launchConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  const colors = ['#FFD93D', '#2ECDA7', '#FF6B6B', '#FFB5C2', '#74b9ff', '#a29bfe', '#fd79a8', '#00cec9'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (6 + Math.random() * 8) + 'px';
+    piece.style.height = (6 + Math.random() * 8) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.innerHTML = '', 4000);
+}
+
+// ── Sheet Management ──
+function openSheet(name) {
+  closeAllSheets();
+  setTimeout(() => {
+    document.getElementById('sheetOverlay').classList.add('open');
+    document.getElementById(name + 'Sheet').classList.add('open');
+    if (name === 'sound') resetSoundSheet();
+  }, 10);
+}
+
+function closeAllSheets() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+}
+
+// ── Render Grids ──
+function renderAnimalGrid() {
+  const grid = document.getElementById('animalGrid');
+  grid.innerHTML = '';
+  animals.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'grid-item' + (state.selectedAnimals.includes(a.emoji) ? ' selected' : '');
+    div.innerHTML = `<div class="grid-circle">${a.emoji}</div><div class="grid-label">${a.name}</div>`;
+    div.onclick = () => {
+      const idx = state.selectedAnimals.indexOf(a.emoji);
+      if (idx >= 0) state.selectedAnimals.splice(idx, 1);
+      else state.selectedAnimals.push(a.emoji);
+      saveState();
+      renderAnimalGrid();
+    };
+    grid.appendChild(div);
+  });
+}
+
+function renderReminderGrid() {
+  const grid = document.getElementById('reminderGrid');
+  grid.innerHTML = '';
+  reminders.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'grid-item' + (state.selectedReminder === r.emoji ? ' selected' : '');
+    div.innerHTML = `<div class="grid-circle">${r.emoji}</div><div class="grid-label">${r.name}</div>`;
+    div.onclick = () => {
+      state.selectedReminder = r.emoji;
+      saveState();
+      renderReminderGrid();
+      updateReminderBadge();
+    };
+    grid.appendChild(div);
+  });
+}
+
+function updateReminderBadge() {
+  const badge = document.getElementById('reminderBadge');
+  if (state.selectedReminder === '⛔') {
+    badge.classList.add('hidden');
+  } else {
+    badge.classList.remove('hidden');
+    badge.textContent = state.selectedReminder;
+  }
+}
+
+function renderBgGrid() {
+  const grid = document.getElementById('bgGrid');
+  grid.innerHTML = '';
+  backgrounds.forEach(bg => {
+    const div = document.createElement('div');
+    div.className = 'grid-item' + (state.selectedBg === bg.id ? ' selected' : '');
+    div.innerHTML = `<div class="bg-preview"><div class="bg-preview-inner ${bg.cls}"></div></div><div class="grid-label">${bg.name}</div>`;
+    div.onclick = () => {
+      state.selectedBg = bg.id;
+      saveState();
+      applyBackground();
+      renderBgGrid();
+    };
+    grid.appendChild(div);
+  });
+}
+
+function applyBackground() {
+  const bg = backgrounds.find(b => b.id === state.selectedBg);
+  const el = document.getElementById('appBg');
+  el.className = 'app-bg ' + (bg ? bg.cls : 'bg-forest');
+}
+
+// ── Sound Sheet ──
+function resetSoundSheet() {
+  document.getElementById('soundMain').classList.remove('hidden');
+  document.getElementById('duringSub').classList.remove('active');
+  document.getElementById('endSub').classList.remove('active');
+  document.getElementById('soundTitle').textContent = 'Sound';
+  document.getElementById('soundCloseBtn').onclick = closeAllSheets;
+}
+
+function showSoundSub(which) {
+  document.getElementById('soundMain').classList.add('hidden');
+  if (which === 'during') {
+    document.getElementById('duringSub').classList.add('active');
+    document.getElementById('soundTitle').textContent = 'During Timer';
+    renderDuringSounds();
+  } else {
+    document.getElementById('endSub').classList.add('active');
+    document.getElementById('soundTitle').textContent = 'End of Timer';
+    renderEndSounds();
+  }
+  document.getElementById('soundCloseBtn').textContent = '‹';
+  document.getElementById('soundCloseBtn').onclick = resetSoundSheet;
+}
+
+function renderDuringSounds() {
+  const list = document.getElementById('duringList');
+  list.innerHTML = '';
+  duringSounds.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'sound-row' + (state.duringSound === s.id ? ' selected' : '');
+    div.innerHTML = `<div class="sound-check"></div><span class="sound-name">${s.name}</span><span class="sound-preview-icon">🔊</span>`;
+    div.onclick = () => {
+      state.duringSound = s.id;
+      saveState();
+      previewDuringSound(s.id);
+      renderDuringSounds();
+    };
+    list.appendChild(div);
+  });
+}
+
+function renderEndSounds() {
+  const list = document.getElementById('endList');
+  list.innerHTML = '';
+  endSounds.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'sound-row' + (state.endSound === s.id ? ' selected' : '');
+    div.innerHTML = `<div class="sound-check"></div><span class="sound-name">${s.name}</span><span class="sound-preview-icon">🔊</span>`;
+    div.onclick = () => {
+      state.endSound = s.id;
+      saveState();
+      previewEndSound(s.id);
+      renderEndSounds();
+    };
+    list.appendChild(div);
+  });
+}
+
+// ── Swipe-to-dismiss sheets ──
+document.querySelectorAll('.sheet').forEach(sheet => {
+  let startY, currentY, isDragging = false;
+  const handle = sheet.querySelector('.sheet-handle');
+
+  sheet.addEventListener('touchstart', e => {
+    if (e.target === handle || e.target === sheet) {
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      sheet.style.transition = 'none';
+    }
+  }, { passive: true });
+
+  sheet.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    currentY = e.touches[0].clientY;
+    const dy = Math.max(0, currentY - startY);
+    sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+
+  sheet.addEventListener('touchend', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    sheet.style.transition = '';
+    const dy = currentY - startY;
+    if (dy > 100) {
+      closeAllSheets();
+    } else {
+      sheet.style.transform = '';
+    }
+  });
+});
+
+// ── Settings ──
+function toggleSetting(key) {
+  state[key] = !state[key];
+  saveState();
+  renderSettings();
+}
+
+function renderSettings() {
+  document.getElementById('toggleLongPress').classList.toggle('on', state.longPressStop);
+  document.getElementById('togglePause').classList.toggle('on', state.pauseButton);
+  document.getElementById('toggleAddTime').classList.toggle('on', state.addSubtractTime);
+}
+
+// ── Long Press to Stop ──
+let longPressTimer = null;
+let longPressTriggered = false;
+
+function handleStop() {
+  if (!state.longPressStop) {
+    stopTimer();
+  }
+  // If long press is on, single tap does nothing — must long press
+}
+
+function setupLongPress() {
+  const btn = document.getElementById('btnStop');
+
+  btn.addEventListener('touchstart', e => {
+    if (!state.longPressStop) return;
+    longPressTriggered = false;
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      stopTimer();
+    }, 800);
+  }, { passive: true });
+
+  btn.addEventListener('touchend', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  btn.addEventListener('touchmove', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  // Mouse fallback
+  btn.addEventListener('mousedown', () => {
+    if (!state.longPressStop) return;
+    longPressTriggered = false;
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      stopTimer();
+    }, 800);
+  });
+
+  btn.addEventListener('mouseup', () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+
+  btn.addEventListener('click', e => {
+    if (state.longPressStop && !longPressTriggered) {
+      e.preventDefault();
+      // Brief shake to hint long press is needed
+      btn.style.animation = 'none';
+      btn.offsetHeight;
+      btn.style.animation = 'headShake 0.4s ease';
+      setTimeout(() => btn.style.animation = '', 500);
+    }
+  });
+}
+
+// ── Pause ──
+function pauseTimer() {
+  isPaused = !isPaused;
+  const btn = document.getElementById('btnPause');
+  btn.textContent = isPaused ? '▶️' : '⏸️';
+  if (isPaused) {
+    document.getElementById('sceneEgg').classList.remove('wobbling');
+    stopDuringSound();
+  } else {
+    document.getElementById('sceneEgg').classList.add('wobbling');
+    startDuringSound();
+  }
+}
+
+// ── Add/Subtract Time ──
+function adjustTime(delta) {
+  remainingSeconds = Math.max(0, remainingSeconds + delta);
+  totalSeconds = Math.max(totalSeconds, remainingSeconds);
+  updateTimerDisplay();
+  updateProgress();
+  updateCracks();
+}
+
+// Show/hide running controls based on settings
+function updateRunningControls() {
+  document.getElementById('btnPause').style.display = state.pauseButton ? '' : 'none';
+  document.getElementById('btnSubTime').style.display = state.addSubtractTime ? '' : 'none';
+  document.getElementById('btnAddTime').style.display = state.addSubtractTime ? '' : 'none';
+}
+
+// ── Init ──
+function init() {
+  applyBackground();
+  updateReminderBadge();
+  renderAnimalGrid();
+  renderReminderGrid();
+  renderBgGrid();
+  renderDuringSounds();
+  renderEndSounds();
+  renderSettings();
+  initPickers();
+  setupLongPress();
+
+  // Preload speech voices
+  if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1020,24 +1020,40 @@ body {
 }
 
 /* ── Confetti / Celebration ── */
-.confetti-container {
+/* ── Fireworks / Celebration ── */
+.fireworks-container {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 200;
   overflow: hidden;
 }
-.confetti-piece {
+
+.firework-particle {
   position: absolute;
-  width: 10px;
-  height: 10px;
   border-radius: 2px;
-  animation: confettiFall linear forwards;
+  opacity: 0;
+  animation: fireworkBurst ease-out forwards;
 }
-@keyframes confettiFall {
-  0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
-  80% { opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+
+@keyframes fireworkBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.firework-trail {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: trailFade ease-out forwards;
+}
+
+@keyframes trailFade {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.2); }
 }
 
 /* ── Sound sheet sub-views ── */
@@ -1388,7 +1404,7 @@ body {
 </div>
 
 <!-- Confetti container -->
-<div class="confetti-container" id="confetti"></div>
+<div class="fireworks-container" id="fireworks"></div>
 
 <script>
 // ── State ──
@@ -1413,6 +1429,10 @@ try {
   const saved = JSON.parse(localStorage.getItem('hatchTimer'));
   if (saved) Object.assign(state, saved);
 } catch(e) {}
+
+// Always start timer at 0:30
+state.minutes = 0;
+state.seconds = 30;
 
 function saveState() {
   localStorage.setItem('hatchTimer', JSON.stringify(state));
@@ -1639,24 +1659,28 @@ function toggleEndSound() {
 }
 
 // ── Scroll Picker ──
-function buildPicker(container, inner, count, value, onChange) {
-  // Circular picker: values 0..count-1 that wrap around (0 -> count-1 -> 0)
-  // We render many copies so the user can scroll freely in both directions
+function buildPicker(container, inner, count, value, onChange, step = 1) {
+  // Linear picker: values 0..count-1, stops at ends (no wrapping)
+  // step: display multiplier (e.g. step=10 shows 0,10,20,30...)
   inner.innerHTML = '';
   const itemH = 40;
-  const copies = 7; // repeat the number set this many times for infinite scroll feel
-  const totalItems = count * copies;
-  const middleCopy = Math.floor(copies / 2); // start in the middle copy
+  const bottomPad = 2; // empty items below so last value can center
 
-  for (let c = 0; c < copies; c++) {
-    for (let i = 0; i < count; i++) {
-      const div = document.createElement('div');
-      div.className = 'picker-item';
-      div.textContent = i;
-      div.dataset.value = i;
-      div.dataset.index = c * count + i;
-      inner.appendChild(div);
-    }
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement('div');
+    div.className = 'picker-item';
+    div.textContent = i * step;
+    div.dataset.value = String(i);
+    div.dataset.index = String(i);
+    inner.appendChild(div);
+  }
+  for (let i = 0; i < bottomPad; i++) {
+    const div = document.createElement('div');
+    div.className = 'picker-item';
+    div.textContent = '';
+    div.dataset.value = '-1';
+    div.dataset.index = String(count + i);
+    inner.appendChild(div);
   }
 
   let currentVal = value;
@@ -1667,21 +1691,14 @@ function buildPicker(container, inner, count, value, onChange) {
   let lastTouchTime = 0;
   let animFrame = null;
 
-  const totalHeight = totalItems * itemH;
-  const centerCopyOffset = middleCopy * count * itemH;
+  const maxScroll = (count - 1) * itemH;
 
-  // Wrap scrollY to stay in the middle region so it never runs out
-  function wrapScroll() {
-    const oneSet = count * itemH;
-    const minBound = oneSet;
-    const maxBound = (copies - 2) * oneSet;
-    if (scrollY < minBound) scrollY += oneSet;
-    else if (scrollY > maxBound) scrollY -= oneSet;
+  function clampScroll(s) {
+    return Math.max(0, Math.min(maxScroll, s));
   }
 
   function getValueFromScroll() {
-    let idx = Math.round(scrollY / itemH);
-    return ((idx % count) + count) % count;
+    return Math.max(0, Math.min(count - 1, Math.round(scrollY / itemH)));
   }
 
   function render(animate) {
@@ -1696,48 +1713,41 @@ function buildPicker(container, inner, count, value, onChange) {
 
     const centerIdx = Math.round(scrollY / itemH);
     inner.querySelectorAll('.picker-item').forEach(el => {
-      const idx = parseInt(el.dataset.index);
-      const dist = Math.abs(idx - centerIdx);
+      const v = parseInt(el.dataset.value);
+      const dist = Math.abs(v - centerIdx);
       el.classList.remove('selected', 'near1');
-      if (dist === 0) el.classList.add('selected');
-      else if (dist === 1) el.classList.add('near1');
+      if (v === centerIdx) el.classList.add('selected');
+      else if (dist === 1 && v >= 0) el.classList.add('near1');
     });
   }
 
   function snapTo(val, animate = true) {
-    currentVal = ((val % count) + count) % count;
-    // Find nearest scroll position for this value from current position
-    const currentIdx = Math.round(scrollY / itemH);
-    const currentMod = ((currentIdx % count) + count) % count;
-    let diff = currentVal - currentMod;
-    if (diff > count / 2) diff -= count;
-    if (diff < -count / 2) diff += count;
-    scrollY = (currentIdx + diff) * itemH;
-    wrapScroll();
+    currentVal = Math.max(0, Math.min(count - 1, val));
+    scrollY = currentVal * itemH;
     render(animate);
     onChange(currentVal);
   }
 
   function startMomentum() {
     if (animFrame) cancelAnimationFrame(animFrame);
-    velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 8); // cap flick speed
+    velocity = Math.sign(velocity) * Math.min(Math.abs(velocity), 8);
     const friction = 0.88;
-    const step = () => {
+    const momentumStep = () => {
       if (isDragging) return;
       velocity *= friction;
       if (Math.abs(velocity) < 0.3) {
-        const val = getValueFromScroll();
-        snapTo(val, true);
+        snapTo(getValueFromScroll(), true);
         return;
       }
-      scrollY += velocity;
-      wrapScroll();
+      scrollY = clampScroll(scrollY + velocity);
+      // Dampen velocity at edges
+      if (scrollY <= 0 || scrollY >= maxScroll) velocity *= 0.3;
       currentVal = getValueFromScroll();
       render(false);
       onChange(currentVal);
-      animFrame = requestAnimationFrame(step);
+      animFrame = requestAnimationFrame(momentumStep);
     };
-    animFrame = requestAnimationFrame(step);
+    animFrame = requestAnimationFrame(momentumStep);
   }
 
   // Touch events
@@ -1758,8 +1768,7 @@ function buildPicker(container, inner, count, value, onChange) {
     const dy = (lastTouchY - touchY) * 0.5;
     const dt = Math.max(1, now - lastTouchTime);
 
-    scrollY += dy;
-    wrapScroll();
+    scrollY = clampScroll(scrollY + dy);
     velocity = dy / dt * 8;
 
     lastTouchY = touchY;
@@ -1794,8 +1803,7 @@ function buildPicker(container, inner, count, value, onChange) {
     const dy = (lastTouchY - e.clientY) * 0.5;
     const dt = Math.max(1, now - lastTouchTime);
 
-    scrollY += dy;
-    wrapScroll();
+    scrollY = clampScroll(scrollY + dy);
     velocity = dy / dt * 8;
 
     lastTouchY = e.clientY;
@@ -1826,13 +1834,11 @@ function buildPicker(container, inner, count, value, onChange) {
     const item = e.target.closest('.picker-item');
     if (!item) return;
     const v = parseInt(item.dataset.value);
-    snapTo(v, true);
+    if (v >= 0 && v < count) snapTo(v, true);
   });
 
-  // Initial position — set scrollY to the middle copy + value offset
-  scrollY = centerCopyOffset + value * itemH;
-  currentVal = value;
-  render(false);
+  // Initial position
+  snapTo(value, false);
 
   return { setValue: (v) => snapTo(v, true), getValue: () => currentVal };
 }
@@ -1849,8 +1855,9 @@ function initPickers() {
   secPicker = buildPicker(
     document.getElementById('secPicker'),
     document.getElementById('secInner'),
-    60, state.seconds,
-    v => { state.seconds = v; saveState(); }
+    6, Math.round(state.seconds / 10),
+    v => { state.seconds = v * 10; saveState(); },
+    10
   );
 }
 
@@ -1964,7 +1971,8 @@ function resetTimerUI() {
   document.getElementById('reminderBadge').style.display = '';
   document.querySelector('.toolbar').style.display = '';
   document.getElementById('settingsBtn').style.display = '';
-  document.getElementById('confetti').innerHTML = '';
+  stopFireworks();
+  document.getElementById('fireworks').innerHTML = '';
 
   updateReminderBadge();
   initPickers();
@@ -1998,7 +2006,7 @@ function timerComplete() {
   }
 
   document.getElementById('completeView').classList.add('visible');
-  launchConfetti();
+  launchFireworks();
 
   // Speak the affirmation with an upbeat female voice
   if (rem && rem.label) {
@@ -2030,23 +2038,163 @@ function dismissHatch() {
 }
 
 // ── Confetti ──
-function launchConfetti() {
-  const container = document.getElementById('confetti');
+let fireworksInterval = null;
+
+function launchFireworks() {
+  const container = document.getElementById('fireworks');
   container.innerHTML = '';
-  const colors = ['#FFD93D', '#2ECDA7', '#FF6B6B', '#FFB5C2', '#74b9ff', '#a29bfe', '#fd79a8', '#00cec9'];
-  for (let i = 0; i < 60; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left = Math.random() * 100 + '%';
-    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.width = (6 + Math.random() * 8) + 'px';
-    piece.style.height = (6 + Math.random() * 8) + 'px';
-    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    piece.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-    piece.style.animationDelay = (Math.random() * 0.5) + 's';
-    container.appendChild(piece);
+  const colors = ['#FFD93D', '#2ECDA7', '#FF6B6B', '#FFB5C2', '#74b9ff', '#a29bfe', '#fd79a8', '#00cec9', '#e056fd', '#f9ca24', '#6ab04c', '#eb4d4b'];
+
+  function createBurst(cx, cy) {
+    const particleCount = 18 + Math.floor(Math.random() * 12);
+    const burstColor = colors[Math.floor(Math.random() * colors.length)];
+    const burstColor2 = colors[Math.floor(Math.random() * colors.length)];
+
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
+      const distance = 40 + Math.random() * 100;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      const duration = 0.6 + Math.random() * 0.8;
+
+      const p = document.createElement('div');
+      p.className = 'firework-particle';
+      const color = Math.random() > 0.5 ? burstColor : burstColor2;
+      p.style.background = color;
+      p.style.left = cx + 'px';
+      p.style.top = cy + 'px';
+      const w = 3 + Math.random() * 6;
+      const h = 3 + Math.random() * 5;
+      p.style.width = w + 'px';
+      p.style.height = h + 'px';
+      p.style.borderRadius = Math.random() > 0.4 ? '50%' : '1px';
+      p.style.animationDuration = duration + 's';
+      p.style.setProperty('--dx', dx + 'px');
+      p.style.setProperty('--dy', dy + 'px');
+      // Use inline keyframes via transform
+      p.animate([
+        { transform: 'translate(0, 0) scale(1) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${dx * 0.6}px, ${dy * 0.6}px) scale(1) rotate(${180 + Math.random() * 360}deg)`, opacity: 1, offset: 0.3 },
+        { transform: `translate(${dx}px, ${dy + 20}px) scale(0.3) rotate(${360 + Math.random() * 360}deg)`, opacity: 0 }
+      ], { duration: duration * 1000, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' });
+
+      container.appendChild(p);
+
+      // Trail dots along the path
+      const trailCount = 3;
+      for (let t = 1; t <= trailCount; t++) {
+        const frac = t / (trailCount + 1) * 0.5;
+        const trail = document.createElement('div');
+        trail.className = 'firework-trail';
+        trail.style.background = color;
+        trail.style.left = (cx + dx * frac) + 'px';
+        trail.style.top = (cy + dy * frac) + 'px';
+        trail.style.animationDuration = (duration * 0.6) + 's';
+        trail.style.animationDelay = (frac * duration * 0.5) + 's';
+        container.appendChild(trail);
+      }
+    }
   }
-  setTimeout(() => container.innerHTML = '', 4000);
+
+  // Fire multiple bursts in waves
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
+
+  function fireBurst() {
+    // Random position, biased toward center-upper area
+    const cx = screenW * 0.2 + Math.random() * screenW * 0.6;
+    const cy = screenH * 0.1 + Math.random() * screenH * 0.4;
+    createBurst(cx, cy);
+
+    // Play a little pop sound
+    if (!endMuted) {
+      const ctx = getAudio();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 600 + Math.random() * 800;
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    }
+  }
+
+  // Initial burst
+  fireBurst();
+  setTimeout(fireBurst, 200);
+  setTimeout(fireBurst, 500);
+
+  // Keep firing bursts
+  let burstCount = 0;
+  fireworksInterval = setInterval(() => {
+    fireBurst();
+    if (Math.random() > 0.5) setTimeout(fireBurst, 150); // double burst sometimes
+    burstCount++;
+    // Clean up old particles periodically
+    if (burstCount % 3 === 0) {
+      const kids = container.children;
+      const maxKids = 300;
+      while (kids.length > maxKids) {
+        container.removeChild(kids[0]);
+      }
+    }
+  }, 600);
+
+  // Play celebration melody
+  playCelebrationMelody();
+}
+
+function stopFireworks() {
+  if (fireworksInterval) { clearInterval(fireworksInterval); fireworksInterval = null; }
+  const container = document.getElementById('fireworks');
+  // Fade out remaining particles
+  setTimeout(() => container.innerHTML = '', 1500);
+}
+
+function playCelebrationMelody() {
+  if (endMuted) return;
+  const ctx = getAudio();
+
+  // Fun upbeat melody - like a victory fanfare
+  const melody = [
+    // note, start, duration, type
+    [523, 0, 0.15],     // C
+    [587, 0.15, 0.15],  // D
+    [659, 0.3, 0.15],   // E
+    [784, 0.45, 0.3],   // G (hold)
+    [659, 0.8, 0.1],    // E
+    [784, 0.95, 0.4],   // G (hold)
+    [880, 1.4, 0.15],   // A
+    [784, 1.6, 0.15],   // G
+    [880, 1.8, 0.15],   // A
+    [1047, 2.0, 0.5],   // high C (big finish)
+    // Harmony
+    [392, 0.45, 0.3],   // G low
+    [523, 0.95, 0.4],   // C
+    [659, 2.0, 0.5],    // E
+  ];
+
+  melody.forEach(([freq, start, dur]) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + start);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime + start + dur * 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + dur + 0.05);
+  });
+
+  // Repeat the melody after a pause
+  setTimeout(() => {
+    if (fireworksInterval) playCelebrationMelody();
+  }, 3500);
 }
 
 // ── Sheet Management ──

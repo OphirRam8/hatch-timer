@@ -1418,7 +1418,7 @@ const defaults = {
   endSound: 'party',
   minutes: 0,
   seconds: 30,
-  longPressStop: true,
+  longPressStop: false,
   pauseButton: false,
   addSubtractTime: false
 };
@@ -2395,53 +2395,37 @@ function handleStop() {
   if (!state.longPressStop) {
     stopTimer();
   }
-  // If long press is on, single tap does nothing — must long press
+  // If long press is on, single tap shakes to hint — must long press
+  else if (!longPressTriggered) {
+    const btn = document.getElementById('btnStop');
+    btn.style.animation = 'none';
+    btn.offsetHeight;
+    btn.style.animation = 'headShake 0.4s ease';
+    setTimeout(() => btn.style.animation = '', 500);
+  }
 }
 
 function setupLongPress() {
   const btn = document.getElementById('btnStop');
 
-  btn.addEventListener('touchstart', e => {
+  function startPress() {
     if (!state.longPressStop) return;
     longPressTriggered = false;
     longPressTimer = setTimeout(() => {
       longPressTriggered = true;
       stopTimer();
     }, 800);
-  }, { passive: true });
+  }
 
-  btn.addEventListener('touchend', () => {
+  function cancelPress() {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  });
+  }
 
-  btn.addEventListener('touchmove', () => {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  });
-
-  // Mouse fallback
-  btn.addEventListener('mousedown', () => {
-    if (!state.longPressStop) return;
-    longPressTriggered = false;
-    longPressTimer = setTimeout(() => {
-      longPressTriggered = true;
-      stopTimer();
-    }, 800);
-  });
-
-  btn.addEventListener('mouseup', () => {
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-  });
-
-  btn.addEventListener('click', e => {
-    if (state.longPressStop && !longPressTriggered) {
-      e.preventDefault();
-      // Brief shake to hint long press is needed
-      btn.style.animation = 'none';
-      btn.offsetHeight;
-      btn.style.animation = 'headShake 0.4s ease';
-      setTimeout(() => btn.style.animation = '', 500);
-    }
-  });
+  btn.addEventListener('touchstart', startPress, { passive: true });
+  btn.addEventListener('touchend', cancelPress);
+  btn.addEventListener('touchmove', cancelPress);
+  btn.addEventListener('mousedown', startPress);
+  btn.addEventListener('mouseup', cancelPress);
 }
 
 // ── Pause ──

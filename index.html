@@ -2246,8 +2246,8 @@ function renderReminderGrid() {
     div.onclick = () => {
       state.selectedReminder = r.emoji;
       saveState();
-      renderReminderGrid();
       updateReminderBadge();
+      closeAllSheets();
     };
     grid.appendChild(div);
   });

@@ -2354,12 +2354,14 @@ function renderEndSounds() {
 
 // ── Swipe-to-dismiss sheets ──
 document.querySelectorAll('.sheet').forEach(sheet => {
-  let startY, currentY, isDragging = false;
+  let startY = 0, currentY = 0, isDragging = false;
   const handle = sheet.querySelector('.sheet-handle');
 
   sheet.addEventListener('touchstart', e => {
-    if (e.target === handle || e.target === sheet) {
+    const target = e.target;
+    if (target === handle || target === sheet || target.classList.contains('sheet-header')) {
       startY = e.touches[0].clientY;
+      currentY = startY;
       isDragging = true;
       sheet.style.transition = 'none';
     }
@@ -2376,11 +2378,10 @@ document.querySelectorAll('.sheet').forEach(sheet => {
     if (!isDragging) return;
     isDragging = false;
     sheet.style.transition = '';
+    sheet.style.transform = '';
     const dy = currentY - startY;
-    if (dy > 100) {
+    if (dy > 80) {
       closeAllSheets();
-    } else {
-      sheet.style.transform = '';
     }
   });
 });

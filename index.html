@@ -1878,6 +1878,9 @@ function startTimer() {
   const total = state.minutes * 60 + state.seconds;
   if (total <= 0) return;
 
+  // Init audio immediately in user-gesture context so browsers allow playback
+  getAudio();
+
   totalSeconds = total;
   remainingSeconds = total;
   isPaused = false;

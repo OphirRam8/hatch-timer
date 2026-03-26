@@ -1529,148 +1529,226 @@ const endSounds = [
   { id: 'timesup', name: 'Times Up' },
 ];
 
-// ── Audio Engine ──
-let audioCtx;
-let audioUnlocked = false;
-function getAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  // iOS requires playing a buffer in a user gesture to fully unlock audio
-  if (!audioUnlocked) {
-    const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(audioCtx.destination);
-    src.start(0);
-    audioUnlocked = true;
+// ── Audio Engine (iOS-compatible WAV-based) ──
+// Generates PCM WAV blobs and plays via HTML5 Audio for reliable iOS playback.
+
+const SAMPLE_RATE = 44100;
+let _iosAudioEl = null; // single Audio element reused for iOS unlock
+
+// Unlock iOS audio on first user touch — must call .play() on a user gesture
+function unlockiOSAudio() {
+  if (_iosAudioEl) return;
+  _iosAudioEl = new Audio();
+  _iosAudioEl.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+  _iosAudioEl.volume = 0.01;
+  const p = _iosAudioEl.play();
+  if (p) p.catch(() => {});
+}
+document.addEventListener('touchstart', unlockiOSAudio, { once: true });
+document.addEventListener('click', unlockiOSAudio, { once: true });
+
+/* Build a WAV Blob from Float32 samples (-1..1) */
+function buildWav(samples) {
+  const n = samples.length;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const view = new DataView(buf);
+  function writeStr(off, str) { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); }
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + n * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, SAMPLE_RATE, true);
+  view.setUint32(28, SAMPLE_RATE * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    let s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
   }
-  return audioCtx;
+  return new Blob([buf], { type: 'audio/wav' });
 }
 
-let duringInterval = null;
-let duringSoundTimeout = null;
-
-function playNote(freq, duration, type = 'sine', volume = 0.4, delay = 0) {
-  const ctx = getAudio();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-  gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + delay + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(ctx.currentTime + delay);
-  osc.stop(ctx.currentTime + delay + duration + 0.05);
+/* Generate a sine/square/triangle/sawtooth wave */
+function oscSamples(freq, duration, type = 'sine', volume = 0.5) {
+  const n = Math.floor(SAMPLE_RATE * duration);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    const phase = (freq * t) % 1;
+    let v = 0;
+    if (type === 'sine') v = Math.sin(2 * Math.PI * freq * t);
+    else if (type === 'square') v = phase < 0.5 ? 1 : -1;
+    else if (type === 'triangle') v = 4 * Math.abs(phase - 0.5) - 1;
+    else if (type === 'sawtooth') v = 2 * phase - 1;
+    // Envelope: quick attack, decay over duration
+    const env = Math.exp(-3 * t / duration);
+    const attack = Math.min(1, t / 0.01);
+    out[i] = v * volume * env * attack;
+  }
+  return out;
 }
 
-/* Rich note: layer fundamental + harmonics for a fuller sound */
-function playRichNote(freq, duration, type = 'sine', volume = 0.35, delay = 0) {
-  playNote(freq, duration, type, volume, delay);
-  playNote(freq * 2, duration * 0.7, 'sine', volume * 0.15, delay);
+/* Mix multiple sample arrays together (with optional delay in seconds) */
+function mixAll(layers) {
+  let maxLen = 0;
+  const offsets = layers.map(l => {
+    const off = Math.floor((l.delay || 0) * SAMPLE_RATE);
+    maxLen = Math.max(maxLen, off + l.samples.length);
+    return off;
+  });
+  const out = new Float32Array(maxLen);
+  layers.forEach((l, idx) => {
+    const off = offsets[idx];
+    for (let i = 0; i < l.samples.length; i++) {
+      out[off + i] += l.samples[i];
+    }
+  });
+  // Soft clip
+  for (let i = 0; i < out.length; i++) {
+    out[i] = Math.tanh(out[i]);
+  }
+  return out;
 }
 
-/* Noise burst for percussive sounds */
-function playNoise(duration, volume = 0.3, delay = 0) {
-  const ctx = getAudio();
-  const bufferSize = ctx.sampleRate * duration;
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  const gain = ctx.createGain();
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 4000;
-  filter.Q.value = 0.5;
-  gain.gain.setValueAtTime(volume, ctx.currentTime + delay);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
-  source.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-  source.start(ctx.currentTime + delay);
-  source.stop(ctx.currentTime + delay + duration + 0.05);
+/* Play a WAV blob */
+function playWav(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = new Audio(url);
+  a.volume = 1.0;
+  a.onended = () => URL.revokeObjectURL(url);
+  const p = a.play();
+  if (p) p.catch(() => {});
 }
+
+/* Convenience: build + play a set of note layers */
+function playSynth(layers) {
+  const mixed = mixAll(layers);
+  playWav(buildWav(mixed));
+}
+
+// ── Sound Definitions ──
 
 function playTickTock() {
-  playNoise(0.03, 0.5);
-  playNote(1200, 0.08, 'sine', 0.4);
-  setTimeout(() => { playNoise(0.03, 0.35); playNote(800, 0.08, 'sine', 0.3); }, 500);
+  const layers = [
+    { samples: oscSamples(1200, 0.08, 'sine', 0.6), delay: 0 },
+    { samples: oscSamples(2400, 0.03, 'square', 0.2), delay: 0 },
+    { samples: oscSamples(800, 0.08, 'sine', 0.5), delay: 0.5 },
+    { samples: oscSamples(1600, 0.03, 'square', 0.15), delay: 0.5 },
+  ];
+  playSynth(layers);
 }
 
 function playRiver() {
-  const ctx = getAudio();
-  for (let i = 0; i < 8; i++) {
-    const freq = 300 + Math.random() * 500;
-    playNote(freq, 0.5, 'sine', 0.15, i * 0.12);
+  const layers = [];
+  for (let i = 0; i < 10; i++) {
+    const freq = 250 + Math.random() * 500;
+    layers.push({ samples: oscSamples(freq, 0.6, 'sine', 0.15), delay: i * 0.1 });
   }
-  playNoise(1.0, 0.08);
+  playSynth(layers);
 }
 
 function playHickory() {
   const notes = [523, 587, 659, 523, 523, 587, 659, 523];
-  notes.forEach((n, i) => playRichNote(n, 0.35, 'triangle', 0.35, i * 0.3));
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.35, 'triangle', 0.45), delay: i * 0.3
+  }));
+  // Add harmonics
+  notes.forEach((n, i) => layers.push({
+    samples: oscSamples(n * 2, 0.2, 'sine', 0.12), delay: i * 0.3
+  }));
+  playSynth(layers);
 }
 
 function playTwinkle() {
   const notes = [523, 523, 784, 784, 880, 880, 784];
-  notes.forEach((n, i) => playRichNote(n, 0.45, 'sine', 0.4, i * 0.35));
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.45, 'sine', 0.5), delay: i * 0.35
+  }));
+  notes.forEach((n, i) => layers.push({
+    samples: oscSamples(n * 2, 0.25, 'sine', 0.12), delay: i * 0.35
+  }));
+  playSynth(layers);
 }
 
 function playRobot() {
+  const layers = [];
   for (let i = 0; i < 6; i++) {
-    playNote(200 + i * 100, 0.2, 'sawtooth', 0.25, i * 0.2);
-    playNote(400 + i * 50, 0.1, 'square', 0.1, i * 0.2 + 0.05);
+    layers.push({ samples: oscSamples(200 + i * 100, 0.2, 'sawtooth', 0.3), delay: i * 0.2 });
+    layers.push({ samples: oscSamples(400 + i * 50, 0.1, 'square', 0.15), delay: i * 0.2 + 0.05 });
   }
+  playSynth(layers);
 }
 
 function playParty() {
   const notes = [523, 659, 784, 1047, 784, 659, 784, 1047, 1175, 1047];
-  notes.forEach((n, i) => {
-    playRichNote(n, 0.25, 'triangle', 0.4, i * 0.15);
-  });
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.25, 'triangle', 0.45), delay: i * 0.15
+  }));
+  notes.forEach((n, i) => layers.push({
+    samples: oscSamples(n * 2, 0.15, 'sine', 0.1), delay: i * 0.15
+  }));
+  playSynth(layers);
 }
 
 function playAlarm() {
+  const layers = [];
   for (let i = 0; i < 6; i++) {
-    playNote(880, 0.2, 'square', 0.35, i * 0.3);
-    playNote(660, 0.2, 'square', 0.35, i * 0.3 + 0.15);
-    playNote(880 * 1.5, 0.15, 'sine', 0.12, i * 0.3);
+    layers.push({ samples: oscSamples(880, 0.2, 'square', 0.4), delay: i * 0.3 });
+    layers.push({ samples: oscSamples(660, 0.2, 'square', 0.4), delay: i * 0.3 + 0.15 });
   }
+  playSynth(layers);
 }
 
 function playUkulele() {
   const notes = [392, 494, 587, 659, 587, 494, 392, 494, 587, 784];
-  notes.forEach((n, i) => {
-    playRichNote(n, 0.3, 'triangle', 0.35, i * 0.2);
-    playNote(n * 1.5, 0.15, 'sine', 0.08, i * 0.2 + 0.01);
-  });
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.3, 'triangle', 0.4), delay: i * 0.2
+  }));
+  notes.forEach((n, i) => layers.push({
+    samples: oscSamples(n * 1.5, 0.15, 'sine', 0.1), delay: i * 0.2
+  }));
+  playSynth(layers);
 }
 
 function playCelebration() {
   const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
-  notes.forEach((n, i) => playRichNote(n, 0.2, 'sine', 0.4, i * 0.12));
-  setTimeout(() => {
-    [1047, 988, 880, 784].forEach((n, i) => playRichNote(n, 0.3, 'triangle', 0.35, i * 0.15));
-  }, 1200);
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.25, 'sine', 0.45), delay: i * 0.12
+  }));
+  [1047, 988, 880, 784].forEach((n, i) => layers.push({
+    samples: oscSamples(n, 0.3, 'triangle', 0.35), delay: 1.2 + i * 0.15
+  }));
+  playSynth(layers);
 }
 
 function playRetro() {
   const notes = [262, 330, 392, 523, 392, 330, 262, 330, 392, 523, 659, 523];
-  notes.forEach((n, i) => playNote(n, 0.18, 'square', 0.3, i * 0.15));
+  const layers = notes.map((n, i) => ({
+    samples: oscSamples(n, 0.18, 'square', 0.35), delay: i * 0.15
+  }));
+  playSynth(layers);
 }
 
 function playTimesUp() {
+  const layers = [];
   for (let i = 0; i < 4; i++) {
-    playRichNote(784, 0.4, 'triangle', 0.45, i * 0.5);
-    playRichNote(1047, 0.4, 'triangle', 0.45, i * 0.5 + 0.25);
+    layers.push({ samples: oscSamples(784, 0.4, 'triangle', 0.5), delay: i * 0.5 });
+    layers.push({ samples: oscSamples(1047, 0.4, 'triangle', 0.5), delay: i * 0.5 + 0.25 });
+    layers.push({ samples: oscSamples(784 * 2, 0.2, 'sine', 0.12), delay: i * 0.5 });
   }
+  playSynth(layers);
 }
 
 const duringPlayers = { ticktock: playTickTock, river: playRiver, hickory: playHickory, twinkle: playTwinkle, robot: playRobot };
 const endPlayers = { party: playParty, alarm: playAlarm, ukulele: playUkulele, celebration: playCelebration, retro: playRetro, timesup: playTimesUp };
+
+let duringInterval = null;
+let duringSoundTimeout = null;
 
 function previewDuringSound(id) {
   if (duringPlayers[id]) duringPlayers[id]();
@@ -1933,8 +2011,8 @@ function startTimer() {
   const total = state.minutes * 60 + state.seconds;
   if (total <= 0) return;
 
-  // Init audio immediately in user-gesture context so browsers allow playback
-  getAudio();
+  // Init audio immediately in user-gesture context so iOS allows playback
+  unlockiOSAudio();
 
   totalSeconds = total;
   remainingSeconds = total;
@@ -2172,17 +2250,9 @@ function launchFireworks() {
 
     // Play a little pop sound
     if (!endMuted) {
-      const ctx = getAudio();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 600 + Math.random() * 800;
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.15);
+      const freq = 600 + Math.random() * 800;
+      const pop = oscSamples(freq, 0.15, 'sine', 0.3);
+      playWav(buildWav(pop));
     }
   }
 
@@ -2220,11 +2290,9 @@ function stopFireworks() {
 
 function playCelebrationMelody() {
   if (endMuted) return;
-  const ctx = getAudio();
 
   // Fun upbeat melody - like a victory fanfare
   const melody = [
-    // note, start, duration, type
     [523, 0, 0.15],     // C
     [587, 0.15, 0.15],  // D
     [659, 0.3, 0.15],   // E
@@ -2241,19 +2309,11 @@ function playCelebrationMelody() {
     [659, 2.0, 0.5],    // E
   ];
 
-  melody.forEach(([freq, start, dur]) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + start);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime + start + dur * 0.7);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(ctx.currentTime + start);
-    osc.stop(ctx.currentTime + start + dur + 0.05);
-  });
+  const layers = melody.map(([freq, start, dur]) => ({
+    samples: oscSamples(freq, dur, 'triangle', 0.4),
+    delay: start
+  }));
+  playSynth(layers);
 
   // Repeat the melody after a pause
   setTimeout(() => {
